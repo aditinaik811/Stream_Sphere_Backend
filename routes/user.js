@@ -3,6 +3,7 @@ const router = express.Router()
 const User = require('../models/User')
 const bcrypt = require('bcrypt');
 const  mongoose = require('mongoose');
+const jwt = require('jsonwebtoken')
 const cloudinary = require('cloudinary').v2;
 require('dotenv').config()
 cloudinary.config({ 
@@ -43,7 +44,60 @@ router.post('/signup',async(req,res)=>{
     }
 })
 
+router.post('/login', async(req,res)=>{
+    try{
+            console.log(req.body)
+            const users = await User.find({email:req.body.email})
+            console.log(users)
+            if(users.length==0){
+               return res.status(500).json({
+                    error:"Email Not Registered"
+                })
+            }
+            const isValid = await bcrypt.compare(req.body.password,users[0].password )
+            if(!isValid)
+            {
+                return res.status(500).json({
+                    error:"Password Match Failed"
+                })
+            }
 
+            const token = jwt.sign({
+                _id:users[0]._id,
+                channelName:users[0].channelName,
+                email:users[0].email,
+                phone:users[0].phone,
+                logoId:users[0].logoId
+            },
+            process.env.JWT_TOKEN,
+            {
+                expiresIn:'365d'
+            }
+        )
+        res.status(200).json({
+            _id:users[0]._id,
+            channelName:users[0].channelName,
+            email:users[0].email,
+            phone:users[0].phone,
+            logoId:users[0].logoId,
+            logoUrl:users[0].logoUrl,
+            token:token,
+            subscribers:users[0].subscribers,
+            subscribedChannels:users[0].subscribedChannels
+        })
+
+            
+
+            
+
+            
+    }
+    catch(err){
+        res.status(500).json({
+            error:"Something Went Wrong!!"
+        })
+    }
+})
 
 
 module.exports = router
