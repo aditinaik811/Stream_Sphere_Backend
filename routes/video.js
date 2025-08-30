@@ -48,7 +48,7 @@ router.post('/upload-video',checkAuth,async(req,res)=>{
 
 router.put('/:videoId',checkAuth, async(req,res)=>{
     try{
-        const verifiedUser = jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
+        const verifiedUser = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
         const video = await Video.findById(req.params.videoId)
         console.log(video)
         if(video.user_id = verifiedUser._id){
@@ -89,9 +89,6 @@ router.put('/:videoId',checkAuth, async(req,res)=>{
                 error:"You have no permission"
             })
         }
-
-        
-
     }
     catch(err)
     {
@@ -100,6 +97,38 @@ router.put('/:videoId',checkAuth, async(req,res)=>{
             error:err
         })
     }
+})
 
+
+router.delete('/:videoId',checkAuth,async(req,res)=>{
+    try
+    {
+        const verifiedUser = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
+        console.log(verifiedUser)
+        const video = await Video.findById(req.params.videoId)
+        if(video.user_id == verifiedUser._id)
+            {
+            await cloudinary.uploader.destroy(video.videoId,{resource_type:'video'})
+            await cloudinary.uploader.destroy(video.thumbnailId)
+            const deleteResponse = await Video.findByIdAndDelete(req.params.videoId)
+            res.status(200).json({
+                deletedResponse:deleteResponse
+            })
+        }
+        else
+        {
+            res.status(500).json({
+                error:"You have no permissions to delete this video"
+            })
+        }
+       
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
 })
 module.exports = router
