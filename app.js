@@ -2,10 +2,11 @@ const express = require('express')
 const app = express();
 const router = express.Router();
 const mongoose = require('mongoose')
-require('dotenv').config()
-const userRoute = require('./routes/user');
+const userRoute = require('./routes/user')
+const videoRoute = require('./routes/video')
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
+require('dotenv').config();
 
     
     
@@ -28,5 +29,6 @@ app.use(fileUpload({
 
 
 app.use('/user',userRoute)
+app.use('/video',videoRoute)
 
 module.exports = app;
