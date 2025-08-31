@@ -12,11 +12,12 @@ cloudinary.config({
         api_secret:process.env.API_SECRET 
 });
 
-
+//Post Video API
 router.post('/upload-video',checkAuth,async(req,res)=>{
     try{
+        console.log("Hii nice to see you")
         const token = req.headers.authorization.split(" ")[1];
-        const user = await jwt.verify(token,process.env.JWT_TOKEN)
+        const user =  await jwt.verify(token,process.env.JWT_TOKEN)
         const uploadedVideo = await cloudinary.uploader.upload(req.files.video.tempFilePath,{ resource_type:'video'})
         const uploadedthumbnail = await cloudinary.uploader.upload(req.files.thumbnail.tempFilePath)
         const newVideo = new Video({
@@ -45,7 +46,7 @@ router.post('/upload-video',checkAuth,async(req,res)=>{
     }
 })
 
-
+//Update Video API
 router.put('/:videoId',checkAuth, async(req,res)=>{
     try{
         const verifiedUser = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
@@ -99,7 +100,7 @@ router.put('/:videoId',checkAuth, async(req,res)=>{
     }
 })
 
-
+//Delete Video API
 router.delete('/:videoId',checkAuth,async(req,res)=>{
     try
     {
@@ -131,4 +132,79 @@ router.delete('/:videoId',checkAuth,async(req,res)=>{
         })
     }
 })
+
+//Like a Video API
+router.put('/like/:videoId',checkAuth,async(req,res)=>{
+    try
+    {
+        const verifiedUser = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
+        const video =  await Video.findById(req.params.videoId)
+        console.log(video)
+        if(video.likedBy.includes(verifiedUser._id)){
+            return res.status(500).json({
+                error:"Alreday Liked"
+            })
+        }
+        if(video.dislikedBy.includes(verifiedUser._id))
+        {
+            video.dislikes -= 1;
+            video.dislikedBy = video.dislikedBy.filter(userId=>userId.toString()!=verifiedUser._id)
+        }
+        video.likes += 1;
+        video.likedBy.push(verifiedUser._id)
+        await video.save();
+        return res.status(200).json({
+            msg:'Liked'
+        })
+
+       
+
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error:err
+        })
+    }
+
+})
+
+//DisLike a Video API
+router.put('/dislike/:videoId',checkAuth,async(req,res)=>{
+    try
+    {
+        const verifiedUser = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
+        const video =  await Video.findById(req.params.videoId)
+        console.log(video)
+        if(video.dislikedBy.includes(verifiedUser._id)){
+            return res.status(500).json({
+                error:"Alreday DisLiked"
+            })
+        }
+        if(video.likedBy.includes(verifiedUser._id))
+        {
+            video.likes -= 1;
+            video.likedBy = video.likedBy.filter(userId=>userId.toString()!=verifiedUser._id)
+        }
+        video.dislikes += 1;
+        video.dislikedBy.push(verifiedUser._id)
+        await video.save();
+        return res.status(200).json({
+            msg:'DisLiked'
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error:err
+        })
+    }
+
+})
+
+
+
+
 module.exports = router
