@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const checkAuth = require('../middleware/checkAuth')
 const jwt = require('jsonwebtoken')
 const Video = require('../models/Video')
+const User = require('../models/User')
 const cloudinary = require('cloudinary').v2;
 require('dotenv').config()
 cloudinary.config({ 
@@ -204,7 +205,99 @@ router.put('/dislike/:videoId',checkAuth,async(req,res)=>{
 
 })
 
+//Subscribe a channel API
+router.put('/subscribe/:userBId',checkAuth,async(req,res)=>{
+    try{
+    const userA = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN)
+    console.log(userA)
+    const userB = await User.findById(req.params.userBId)
+    console.log(userB)
+    if(userB.subscribedBy.includes(userA._id))
+    {
+        return res.status(500).json({
+            error:"You have already subscribed"
+        })
+    }
+
+    // console.log("Not Subscribed")
+    userB.subscribers += 1;
+    userB.subscribedBy.push(userA._id);
+    await userB.save()
+    const userAFullInformation = await User.findById(userA._id)
+    userAFullInformation.subscribedChannels.push(userB._id)
+    await userAFullInformation.save()
+    res.status(200).json({
+        msg:'Subscribed'
+    })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error : err
+        })
+    }
+
+})
+
+//Unsubscibe a channel API
+router.put('/unsubscribe/:userBId',checkAuth,async(req,res)=>{
+    try
+    {
+       const userA = await jwt.verify(req.headers.authorization.split(" ")[1],process.env.JWT_TOKEN) 
+       const userB = await  User.findById(req.params.userBId)
+       console.log(userA)
+       console.log(userB)
+       if(userB.subscribedBy.includes(userA._id))
+       {
+        userB.subscribers -= 1;
+        userB.subscribedBy = userB.subscribedBy.filter(userId=>userId.toString()!=userA._id)
+        await userB.save()
+        const userAFullInformation = await User.findById(userA._id)
+        userAFullInformation.subscribedChannels = userAFullInformation.subscribedChannels.filter(userId=>userId.toString()!=userB._id)
+        await userAFullInformation.save()
+        res.status(200).json({
+            msg:"Unsubscribed"
+        })
+       }
+       else
+       {
+        return res.status(500).json({
+            error : "Not Subscibed"
+        })
+       }
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error:err
+        })
+    }
+})
 
 
+//Views on Video API
+router.put('/view/:videoId',async(req,res)=>{
+    try{
+   const video =  await Video.findById(req.params.videoId)
+   console.log(video)
+   video.views+=1;
+   await video.save()
+   res.status(200).json({
+    msg:'OK'
+   })
+
+   }
+   catch(err)
+   {
+    console.log(err)
+    res.status(500).json({
+        error:err
+    })
+}
+
+
+})
 
 module.exports = router
