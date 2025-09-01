@@ -4,6 +4,7 @@ const router = express.Router();
 const mongoose = require('mongoose')
 const userRoute = require('./routes/user')
 const videoRoute = require('./routes/video')
+const commentRoute = require('./routes/comment')
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 require('dotenv').config();
@@ -30,6 +31,7 @@ app.use(fileUpload({
 
 app.use('/user',userRoute)
 app.use('/video',videoRoute)
+app.use('/comment',commentRoute)
 
 
 module.exports = app;
