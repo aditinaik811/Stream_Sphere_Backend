@@ -47,6 +47,9 @@ router.post('/upload-video',checkAuth,async(req,res)=>{
     }
 })
 
+//Get Video API
+
+
 //Update Video API
 router.put('/:videoId',checkAuth, async(req,res)=>{
     try{
