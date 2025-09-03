@@ -48,7 +48,42 @@ router.post('/upload-video',checkAuth,async(req,res)=>{
 })
 
 //Get Video API
+router.get('/my-videos',checkAuth,async(req,res)=>{
+    try{
+        const token = req.headers.authorization.split(" ")[1];
+        const user =  await jwt.verify(token,process.env.JWT_TOKEN)
+        const allVideos = await Video.find({user_id:user._id}).populate('user_id','channelName logoUrl subscribers')
 
+        res.status(200).json({
+            allVideos : allVideos
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).json({
+            error:err
+        })
+    }
+})
+
+
+//All Videos API
+router.get('/',async(req,res)=>{
+    try{
+        const allVideos = await Video.find()
+        res.status(200).json({
+            allVideos : allVideos
+        })
+    }
+    catch(err)
+    {
+        console.log(err)
+        res.status(500).jsoon({
+            error:err
+        })
+    }
+})
 
 //Update Video API
 router.put('/:videoId',checkAuth, async(req,res)=>{
